@@ -77,7 +77,7 @@ func TestScrape(t *testing.T) {
 			if runtime.GOOS == "linux" {
 				assertMemoryUsageMetricHasLinuxSpecificStateLabels(t, metrics.At(0))
 			} else if runtime.GOOS != "windows" {
-				internal.AssertSumMetricHasAttributeValue(t, metrics.At(0), 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Inactive))
+				internal.AssertSumMetricHasAttributeValue(t, metrics.At(0), 3, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Inactive))
 			}
 
 			internal.AssertSameTimeStampForAllMetrics(t, metrics)
@@ -87,14 +87,15 @@ func TestScrape(t *testing.T) {
 
 func assertMemoryUsageMetricValid(t *testing.T, metric pdata.Metric, descriptor pdata.Metric) {
 	internal.AssertDescriptorEqual(t, descriptor, metric)
-	assert.GreaterOrEqual(t, metric.Sum().DataPoints().Len(), 2)
+	assert.GreaterOrEqual(t, metric.Sum().DataPoints().Len(), 3)
 	internal.AssertSumMetricHasAttributeValue(t, metric, 0, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Used))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 1, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Free))
+	internal.AssertSumMetricHasAttributeValue(t, metric, 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Available))
 }
 
 func assertMemoryUsageMetricHasLinuxSpecificStateLabels(t *testing.T, metric pdata.Metric) {
-	internal.AssertSumMetricHasAttributeValue(t, metric, 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Buffered))
-	internal.AssertSumMetricHasAttributeValue(t, metric, 3, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Cached))
-	internal.AssertSumMetricHasAttributeValue(t, metric, 4, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabReclaimable))
-	internal.AssertSumMetricHasAttributeValue(t, metric, 5, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabUnreclaimable))
+	internal.AssertSumMetricHasAttributeValue(t, metric, 3, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Buffered))
+	internal.AssertSumMetricHasAttributeValue(t, metric, 4, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Cached))
+	internal.AssertSumMetricHasAttributeValue(t, metric, 5, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabReclaimable))
+	internal.AssertSumMetricHasAttributeValue(t, metric, 6, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabUnreclaimable))
 }

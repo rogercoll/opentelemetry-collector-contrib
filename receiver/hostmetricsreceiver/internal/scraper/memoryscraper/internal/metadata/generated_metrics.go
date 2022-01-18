@@ -99,6 +99,7 @@ var AttributeState = struct {
 	SlabReclaimable   string
 	SlabUnreclaimable string
 	Used              string
+	Available         string
 }{
 	"buffered",
 	"cached",
@@ -107,4 +108,5 @@ var AttributeState = struct {
 	"slab_reclaimable",
 	"slab_unreclaimable",
 	"used",
+	"available",
 }
