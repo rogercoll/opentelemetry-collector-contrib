@@ -41,18 +41,21 @@ func (m *metricImpl) Init(metric pdata.Metric) {
 }
 
 type metricStruct struct {
-	SystemMemoryUsage MetricIntf
+	SystemMemoryUsage       MetricIntf
+	SystemMemoryUtilization MetricIntf
 }
 
 // Names returns a list of all the metric name strings.
 func (m *metricStruct) Names() []string {
 	return []string{
 		"system.memory.usage",
+		"system.memory.utilization",
 	}
 }
 
 var metricsByName = map[string]MetricIntf{
-	"system.memory.usage": Metrics.SystemMemoryUsage,
+	"system.memory.usage":       Metrics.SystemMemoryUsage,
+	"system.memory.utilization": Metrics.SystemMemoryUtilization,
 }
 
 func (m *metricStruct) ByName(n string) MetricIntf {
@@ -71,6 +74,15 @@ var Metrics = &metricStruct{
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(false)
 			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+		},
+	},
+	&metricImpl{
+		"system.memory.utilization",
+		func(metric pdata.Metric) {
+			metric.SetName("system.memory.utilization")
+			metric.SetDescription("Percentage of memory bytes in use.")
+			metric.SetUnit("1")
+			metric.SetDataType(pdata.MetricDataTypeGauge)
 		},
 	},
 }

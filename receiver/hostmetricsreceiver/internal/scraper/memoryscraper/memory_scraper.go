@@ -25,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
 )
 
-const metricsLen = 1
+const metricsLen = 2
 
 // scraper for Memory Metrics
 type scraper struct {
@@ -52,6 +52,7 @@ func (s *scraper) Scrape(_ context.Context) (pdata.Metrics, error) {
 
 	metrics.EnsureCapacity(metricsLen)
 	initializeMemoryUsageMetric(metrics.AppendEmpty(), now, memInfo)
+	initializeMemoryUtilizationMetric(metrics.AppendEmpty(), now, memInfo)
 	return md, nil
 }
 
@@ -63,8 +64,22 @@ func initializeMemoryUsageMetric(metric pdata.Metric, now pdata.Timestamp, memIn
 	appendMemoryUsageStateDataPoints(idps, now, memInfo)
 }
 
+func initializeMemoryUtilizationMetric(metric pdata.Metric, now pdata.Timestamp, memInfo *mem.VirtualMemoryStat) {
+	metadata.Metrics.SystemMemoryUtilization.Init(metric)
+
+	idps := metric.Gauge().DataPoints()
+	idps.EnsureCapacity(memStatesLen)
+	appendMemoryUtilizationStateDataPoints(idps, now, memInfo)
+}
+
 func initializeMemoryUsageDataPoint(dataPoint pdata.NumberDataPoint, now pdata.Timestamp, stateLabel string, value int64) {
 	dataPoint.Attributes().InsertString(metadata.Attributes.State, stateLabel)
 	dataPoint.SetTimestamp(now)
 	dataPoint.SetIntVal(value)
+}
+
+func initializeMemoryUtilizationDataPoint(dataPoint pdata.NumberDataPoint, now pdata.Timestamp, stateLabel string, value float64) {
+	dataPoint.Attributes().InsertString(metadata.Attributes.State, stateLabel)
+	dataPoint.SetTimestamp(now)
+	dataPoint.SetDoubleVal(value)
 }

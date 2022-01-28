@@ -31,3 +31,9 @@ func appendMemoryUsageStateDataPoints(idps pdata.NumberDataPointSlice, now pdata
 	initializeMemoryUsageDataPoint(idps.AppendEmpty(), now, metadata.AttributeState.Free, int64(memInfo.Free))
 	initializeMemoryUsageDataPoint(idps.AppendEmpty(), now, metadata.AttributeState.Inactive, int64(memInfo.Inactive))
 }
+
+func appendMemoryUtilizationStateDataPoints(idps pdata.NumberDataPointSlice, now pdata.Timestamp, memInfo *mem.VirtualMemoryStat) {
+	initializeMemoryUtilizationDataPoint(idps.AppendEmpty(), now, metadata.AttributeState.Used, float64(memInfo.Used)/float64(memInfo.Total))
+	initializeMemoryUtilizationDataPoint(idps.AppendEmpty(), now, metadata.AttributeState.Free, float64(memInfo.Free)/float64(memInfo.Total))
+	initializeMemoryUtilizationDataPoint(idps.AppendEmpty(), now, metadata.AttributeState.Inactive, float64(memInfo.Inactive)/float64(memInfo.Total))
+}

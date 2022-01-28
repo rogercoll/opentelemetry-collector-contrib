@@ -73,11 +73,14 @@ func TestScrape(t *testing.T) {
 
 			metrics := md.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics()
 			assertMemoryUsageMetricValid(t, metrics.At(0), metadata.Metrics.SystemMemoryUsage.New())
+			assertMemoryUtilizationMetricValid(t, metrics.At(1), metadata.Metrics.SystemMemoryUtilization.New())
 
 			if runtime.GOOS == "linux" {
 				assertMemoryUsageMetricHasLinuxSpecificStateLabels(t, metrics.At(0))
+				assertMemoryUtilizationMetricHasLinuxSpecificStateLabels(t, metrics.At(1))
 			} else if runtime.GOOS != "windows" {
 				internal.AssertSumMetricHasAttributeValue(t, metrics.At(0), 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Inactive))
+				internal.AssertGaugeMetricHasAttributeValue(t, metrics.At(1), 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Inactive))
 			}
 
 			internal.AssertSameTimeStampForAllMetrics(t, metrics)
@@ -97,4 +100,18 @@ func assertMemoryUsageMetricHasLinuxSpecificStateLabels(t *testing.T, metric pda
 	internal.AssertSumMetricHasAttributeValue(t, metric, 3, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Cached))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 4, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabReclaimable))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 5, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabUnreclaimable))
+}
+
+func assertMemoryUtilizationMetricValid(t *testing.T, metric pdata.Metric, descriptor pdata.Metric) {
+	internal.AssertDescriptorEqual(t, descriptor, metric)
+	assert.GreaterOrEqual(t, metric.Sum().DataPoints().Len(), 2)
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 0, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Used))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 1, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Free))
+}
+
+func assertMemoryUtilizationMetricHasLinuxSpecificStateLabels(t *testing.T, metric pdata.Metric) {
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 2, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Buffered))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 3, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.Cached))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 4, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabReclaimable))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 5, metadata.Attributes.State, pdata.NewAttributeValueString(metadata.AttributeState.SlabUnreclaimable))
 }
