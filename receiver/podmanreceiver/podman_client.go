@@ -30,6 +30,16 @@ import (
 	"go.uber.org/zap"
 )
 
+type container struct {
+	Name    []string          `json:"Names"`
+	Image   string            `json:"Image"`
+	ImageID string            `json:"ImageId"`
+	Id      string            `json:"Id"`
+	Pod     string            `json:"Pod"`
+	PodName string            `json:"PodName"`
+	Labels  map[string]string `json:"Labels"`
+}
+
 type containerStats struct {
 	AvgCPU        float64
 	ContainerID   string
@@ -61,11 +71,13 @@ type clientFactory func(logger *zap.Logger, cfg *Config) (client, error)
 
 type client interface {
 	stats() ([]containerStats, error)
+	listContainers(context.Context) ([]container, error)
 }
 
 type podmanClient struct {
-	conn     *http.Client
-	endpoint string
+	conn       *http.Client
+	endpoint   string
+	containers map[string]container
 }
 
 func newPodmanClient(logger *zap.Logger, cfg *Config) (client, error) {
@@ -131,5 +143,32 @@ func (c *podmanClient) ping() error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping response was %d", resp.StatusCode)
 	}
+	return nil
+}
+
+func (c *podmanClient) listContainers(ctx context.Context) ([]container, error) {
+	params := url.Values{}
+	params.Add("stream", "false")
+
+	resp, err := c.request(ctx, "/containers/json", params)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var containers []container
+	err = json.Unmarshal(bytes, &containers)
+	if err != nil {
+		return nil, err
+	}
+	return containers, nil
+}
+
+func (pc *podmanClient) LoadContainerList(ctx context.Context) error {
 	return nil
 }
