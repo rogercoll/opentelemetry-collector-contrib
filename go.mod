@@ -57,6 +57,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecstaskobserver v0.70.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver v0.70.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.70.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/newrelicobserver v0.70.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.70.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.70.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sigv4authextension v0.70.0
@@ -837,6 +838,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/obse
 replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecstaskobserver => ./extension/observer/ecstaskobserver
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver => ./extension/observer/hostobserver
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/newrelicobserver => ./extension/observer/newrelicobserver
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver => ./extension/observer/k8sobserver
 

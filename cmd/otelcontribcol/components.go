@@ -3,6 +3,7 @@
 package main
 
 import (
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/newrelicobserver"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/exporter"
 	loggingexporter "go.opentelemetry.io/collector/exporter/loggingexporter"
@@ -185,6 +186,7 @@ func components() (otelcol.Factories, error) {
 		jaegerremotesampling.NewFactory(),
 		oauth2clientauthextension.NewFactory(),
 		hostobserver.NewFactory(),
+		newrelicobserver.NewFactory(),
 		k8sobserver.NewFactory(),
 		oidcauthextension.NewFactory(),
 		pprofextension.NewFactory(),

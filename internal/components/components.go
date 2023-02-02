@@ -15,6 +15,7 @@
 package components // import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/components"
 
 import (
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/newrelicobserver"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/loggingexporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
@@ -206,6 +207,7 @@ func Components() (otelcol.Factories, error) {
 		headerssetterextension.NewFactory(),
 		healthcheckextension.NewFactory(),
 		hostobserver.NewFactory(),
+		newrelicobserver.NewFactory(),
 		httpforwarder.NewFactory(),
 		k8sobserver.NewFactory(),
 		pprofextension.NewFactory(),
