@@ -1,0 +1,14 @@
+podman_observer:
+podman_observer/all_settings:
+  endpoint: "unix:///var/run/podman.sock"
+  timeout: 20s
+  use_hostname_if_present: true
+  use_host_bindings: true
+  ignore_non_host_bindings: true
+  cache_sync_interval: 5m
+podman_observer/use_hostname_if_present:
+  use_hostname_if_present: true
+podman_observer/use_host_bindings:
+  use_host_bindings: true
+podman_observer/ignore_non_host_bindings:
+  ignore_non_host_bindings: true
