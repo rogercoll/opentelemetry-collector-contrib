@@ -15,7 +15,7 @@
 //go:build !windows
 // +build !windows
 
-package podmanreceiver
+package podman
 
 import (
 	"context"

@@ -520,6 +520,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/kubelet v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders v0.70.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.70.0 // indirect
@@ -717,6 +718,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/commo
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal => ./internal/coreinternal
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker => ./internal/docker
+
+replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman => ./internal/podman
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter => ./internal/filter
 

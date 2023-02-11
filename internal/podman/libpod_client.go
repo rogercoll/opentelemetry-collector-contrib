@@ -15,7 +15,7 @@
 //go:build !windows
 // +build !windows
 
-package podmanreceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
+package podman // import "github.com/open-telemetry/opentelemetry-collector-contrib//podman"
 
 import (
 	"context"
