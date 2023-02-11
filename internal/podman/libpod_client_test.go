@@ -71,17 +71,17 @@ func TestStats(t *testing.T) {
 	srv.Start()
 	defer srv.Close()
 
-	config := &Config{
+	config := &LibPodConfig{
 		Endpoint: fmt.Sprintf("unix://%s", addr),
 		// default timeout
 		Timeout: 5 * time.Second,
 	}
 
-	cli, err := newLibpodClient(zap.NewNop(), config)
+	cli, err := NewLibpodClient(zap.NewNop(), config)
 	assert.NotNil(t, cli)
 	assert.Nil(t, err)
 
-	expectedStats := containerStats{
+	expectedStats := ContainerStats{
 		AvgCPU:        42.04781177856639,
 		ContainerID:   "e6af5805edae6c950003abd5451808b277b67077e400f0a6f69d01af116ef014",
 		Name:          "charming_sutherland",
@@ -102,7 +102,7 @@ func TestStats(t *testing.T) {
 		Duration:      309165846000,
 	}
 
-	stats, err := cli.stats(context.Background(), nil)
+	stats, err := cli.Stats(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedStats, stats[0])
 }
@@ -129,17 +129,17 @@ func TestStatsError(t *testing.T) {
 	srv.Start()
 	defer srv.Close()
 
-	config := &Config{
+	config := &LibPodConfig{
 		Endpoint: fmt.Sprintf("unix://%s", addr),
 		// default timeout
 		Timeout: 5 * time.Second,
 	}
 
-	cli, err := newLibpodClient(zap.NewNop(), config)
+	cli, err := NewLibpodClient(zap.NewNop(), config)
 	assert.NotNil(t, cli)
 	assert.Nil(t, err)
 
-	stats, err := cli.stats(context.Background(), nil)
+	stats, err := cli.Stats(context.Background(), nil)
 	assert.Nil(t, stats)
 	assert.EqualError(t, err, errNoStatsFound.Error())
 }
@@ -165,17 +165,17 @@ func TestList(t *testing.T) {
 	srv.Start()
 	defer srv.Close()
 
-	config := &Config{
+	config := &LibPodConfig{
 		Endpoint: fmt.Sprintf("unix://%s", addr),
 		// default timeout
 		Timeout: 5 * time.Second,
 	}
 
-	cli, err := newLibpodClient(zap.NewNop(), config)
+	cli, err := NewLibpodClient(zap.NewNop(), config)
 	assert.NotNil(t, cli)
 	assert.Nil(t, err)
 
-	expectedContainer := container{
+	expectedContainer := Container{
 
 		AutoRemove: false,
 		Command:    []string{"nginx", "-g", "daemon off;"},
@@ -203,7 +203,7 @@ func TestList(t *testing.T) {
 		Status:     "",
 	}
 
-	containers, err := cli.list(context.Background(), nil)
+	containers, err := cli.List(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedContainer, containers[0])
 }
@@ -238,23 +238,23 @@ func TestEvents(t *testing.T) {
 	srv.Start()
 	defer srv.Close()
 
-	config := &Config{
+	config := &LibPodConfig{
 		Endpoint: fmt.Sprintf("unix://%s", addr),
 		// default timeout
 		Timeout: 5 * time.Second,
 	}
 
-	cli, err := newLibpodClient(zap.NewNop(), config)
+	cli, err := NewLibpodClient(zap.NewNop(), config)
 	assert.NotNil(t, cli)
 	assert.Nil(t, err)
 
-	expectedEvents := []event{
+	expectedEvents := []Event{
 		{ID: "49a4c52afb06e6b36b2941422a0adf47421dbfbf40503dbe17bd56b4570b6681", Status: "start"},
 		{ID: "d5c43c6954e4bfe62170c75f9f18f81da644bd35bfd22dbfafda349192d4940a", Status: "died"},
 	}
 
-	events, errs := cli.events(context.Background(), nil)
-	var actualEvents []event
+	events, errs := cli.Events(context.Background(), nil)
+	var actualEvents []Event
 
 loop:
 	for {

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
@@ -32,7 +33,7 @@ type point struct {
 	attributes map[string]string
 }
 
-func containerStatsToMetrics(ts time.Time, container container, stats *containerStats) pmetric.Metrics {
+func containerStatsToMetrics(ts time.Time, container podman.Container, stats *podman.ContainerStats) pmetric.Metrics {
 	pbts := pcommon.NewTimestampFromTime(ts)
 
 	md := pmetric.NewMetrics()
@@ -53,23 +54,23 @@ func containerStatsToMetrics(ts time.Time, container container, stats *container
 	return md
 }
 
-func appendMemoryMetrics(ms pmetric.MetricSlice, stats *containerStats, ts pcommon.Timestamp) {
+func appendMemoryMetrics(ms pmetric.MetricSlice, stats *podman.ContainerStats, ts pcommon.Timestamp) {
 	gaugeI(ms, "memory.usage.limit", "By", []point{{intVal: stats.MemLimit}}, ts)
 	gaugeI(ms, "memory.usage.total", "By", []point{{intVal: stats.MemUsage}}, ts)
 	gaugeF(ms, "memory.percent", "1", []point{{doubleVal: stats.MemPerc}}, ts)
 }
 
-func appendNetworkMetrics(ms pmetric.MetricSlice, stats *containerStats, ts pcommon.Timestamp) {
+func appendNetworkMetrics(ms pmetric.MetricSlice, stats *podman.ContainerStats, ts pcommon.Timestamp) {
 	sum(ms, "network.io.usage.tx_bytes", "By", []point{{intVal: stats.NetInput}}, ts)
 	sum(ms, "network.io.usage.rx_bytes", "By", []point{{intVal: stats.NetOutput}}, ts)
 }
 
-func appendIOMetrics(ms pmetric.MetricSlice, stats *containerStats, ts pcommon.Timestamp) {
+func appendIOMetrics(ms pmetric.MetricSlice, stats *podman.ContainerStats, ts pcommon.Timestamp) {
 	sum(ms, "blockio.io_service_bytes_recursive.write", "By", []point{{intVal: stats.BlockOutput}}, ts)
 	sum(ms, "blockio.io_service_bytes_recursive.read", "By", []point{{intVal: stats.BlockInput}}, ts)
 }
 
-func appendCPUMetrics(ms pmetric.MetricSlice, stats *containerStats, ts pcommon.Timestamp) {
+func appendCPUMetrics(ms pmetric.MetricSlice, stats *podman.ContainerStats, ts pcommon.Timestamp) {
 	sum(ms, "cpu.usage.system", "ns", []point{{intVal: stats.CPUSystemNano}}, ts)
 	sum(ms, "cpu.usage.total", "ns", []point{{intVal: stats.CPUNano}}, ts)
 	gaugeF(ms, "cpu.percent", "1", []point{{doubleVal: stats.CPU}}, ts)

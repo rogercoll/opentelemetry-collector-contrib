@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	rcvr "go.opentelemetry.io/collector/receiver"
@@ -42,9 +43,11 @@ func createDefaultConfig() *Config {
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 10 * time.Second,
 		},
-		Endpoint:   "unix:///run/podman/podman.sock",
-		Timeout:    5 * time.Second,
-		APIVersion: defaultAPIVersion,
+		LibPodConfig: podman.LibPodConfig{
+			Endpoint:   "unix:///run/podman/podman.sock",
+			Timeout:    5 * time.Second,
+			APIVersion: defaultAPIVersion,
+		},
 	}
 }
 

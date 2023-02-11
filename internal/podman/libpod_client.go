@@ -38,7 +38,7 @@ type libpodClient struct {
 	endpoint string
 }
 
-func newLibpodClient(logger *zap.Logger, cfg *Config) (PodmanClient, error) {
+func NewLibpodClient(logger *zap.Logger, cfg *LibPodConfig) (Client, error) {
 	connection, err := newPodmanConnection(logger, cfg.Endpoint, cfg.SSHKey, cfg.SSHPassphrase)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (c *libpodClient) request(ctx context.Context, path string, params url.Valu
 	return c.conn.Do(req)
 }
 
-func (c *libpodClient) stats(ctx context.Context, options url.Values) ([]containerStats, error) {
+func (c *libpodClient) Stats(ctx context.Context, options url.Values) ([]ContainerStats, error) {
 	resp, err := c.request(ctx, "/containers/stats", options)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (c *libpodClient) stats(ctx context.Context, options url.Values) ([]contain
 		return nil, err
 	}
 
-	report := &containerStatsReport{}
+	report := &ContainerStatsReport{}
 	err = json.Unmarshal(bytes, report)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (c *libpodClient) stats(ctx context.Context, options url.Values) ([]contain
 	return report.Stats, nil
 }
 
-func (c *libpodClient) list(ctx context.Context, options url.Values) ([]container, error) {
+func (c *libpodClient) List(ctx context.Context, options url.Values) ([]Container, error) {
 	resp, err := c.request(ctx, "/containers/json", options)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c *libpodClient) list(ctx context.Context, options url.Values) ([]containe
 		return nil, err
 	}
 
-	var report []container
+	var report []Container
 	err = json.Unmarshal(bytes, &report)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (c *libpodClient) list(ctx context.Context, options url.Values) ([]containe
 	return report, nil
 }
 
-func (c *libpodClient) ping(ctx context.Context) error {
+func (c *libpodClient) Ping(ctx context.Context) error {
 	resp, err := c.request(ctx, "/_ping", nil)
 	if err != nil {
 		return err
@@ -121,8 +121,8 @@ func (c *libpodClient) ping(ctx context.Context) error {
 }
 
 // events returns a stream of events. It's up to the caller to close the stream by canceling the context.
-func (c *libpodClient) events(ctx context.Context, options url.Values) (<-chan event, <-chan error) {
-	events := make(chan event)
+func (c *libpodClient) Events(ctx context.Context, options url.Values) (<-chan Event, <-chan error) {
+	events := make(chan Event)
 	errs := make(chan error, 1)
 
 	started := make(chan struct{})
@@ -140,7 +140,7 @@ func (c *libpodClient) events(ctx context.Context, options url.Values) (<-chan e
 		dec := json.NewDecoder(resp.Body)
 		close(started)
 		for {
-			var e event
+			var e Event
 			select {
 			case <-ctx.Done():
 				errs <- ctx.Err()

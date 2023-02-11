@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -52,7 +53,7 @@ func newReceiver(
 	}
 
 	if clientFactory == nil {
-		clientFactory = newLibpodClient
+		clientFactory = podman.NewLibpodClient
 	}
 
 	recv := &receiver{
@@ -70,7 +71,7 @@ func newReceiver(
 
 func (r *receiver) start(ctx context.Context, _ component.Host) error {
 	var err error
-	podmanClient, err := r.clientFactory(r.set.Logger, r.config)
+	podmanClient, err := r.clientFactory(r.set.Logger, &r.config.LibPodConfig)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (r *receiver) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(containers))
 	for _, c := range containers {
-		go func(c container) {
+		go func(c podman.Container) {
 			defer wg.Done()
 			stats, err := r.scraper.fetchContainerStats(ctx, c)
 			if err != nil {

@@ -20,6 +20,7 @@ package podmanreceiver
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -29,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -36,26 +38,42 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-type MockClient struct {
-	PingF   func(context.Context) error
-	StatsF  func(context.Context, url.Values) ([]containerStats, error)
-	ListF   func(context.Context, url.Values) ([]container, error)
-	EventsF func(context.Context, url.Values) (<-chan event, <-chan error)
+func tmpSock(t *testing.T) (net.Listener, string) {
+	f, err := os.CreateTemp(os.TempDir(), "testsock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := f.Name()
+	os.Remove(addr)
+
+	listener, err := net.Listen("unix", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return listener, addr
 }
 
-func (c *MockClient) ping(ctx context.Context) error {
+type MockClient struct {
+	PingF   func(context.Context) error
+	StatsF  func(context.Context, url.Values) ([]podman.ContainerStats, error)
+	ListF   func(context.Context, url.Values) ([]podman.Container, error)
+	EventsF func(context.Context, url.Values) (<-chan podman.Event, <-chan error)
+}
+
+func (c *MockClient) Ping(ctx context.Context) error {
 	return c.PingF(ctx)
 }
 
-func (c *MockClient) stats(ctx context.Context, options url.Values) ([]containerStats, error) {
+func (c *MockClient) Stats(ctx context.Context, options url.Values) ([]podman.ContainerStats, error) {
 	return c.StatsF(ctx, options)
 }
 
-func (c *MockClient) list(ctx context.Context, options url.Values) ([]container, error) {
+func (c *MockClient) List(ctx context.Context, options url.Values) ([]podman.Container, error) {
 	return c.ListF(ctx, options)
 }
 
-func (c *MockClient) events(ctx context.Context, options url.Values) (<-chan event, <-chan error) {
+func (c *MockClient) Events(ctx context.Context, options url.Values) (<-chan podman.Event, <-chan error) {
 	return c.EventsF(ctx, options)
 }
 
@@ -63,13 +81,13 @@ var baseClient = MockClient{
 	PingF: func(context.Context) error {
 		return nil
 	},
-	StatsF: func(context.Context, url.Values) ([]containerStats, error) {
+	StatsF: func(context.Context, url.Values) ([]podman.ContainerStats, error) {
 		return nil, nil
 	},
-	ListF: func(context.Context, url.Values) ([]container, error) {
+	ListF: func(context.Context, url.Values) ([]podman.Container, error) {
 		return nil, nil
 	},
-	EventsF: func(context.Context, url.Values) (<-chan event, <-chan error) {
+	EventsF: func(context.Context, url.Values) (<-chan podman.Event, <-chan error) {
 		return nil, nil
 	},
 }
@@ -80,11 +98,13 @@ func TestWatchingTimeouts(t *testing.T) {
 	defer os.Remove(addr)
 
 	config := &Config{
-		Endpoint: fmt.Sprintf("unix://%s", addr),
-		Timeout:  50 * time.Millisecond,
+		LibPodConfig: podman.LibPodConfig{
+			Endpoint: fmt.Sprintf("unix://%s", addr),
+			Timeout:  50 * time.Millisecond,
+		},
 	}
 
-	client, err := newLibpodClient(zap.NewNop(), config)
+	client, err := podman.NewLibpodClient(zap.NewNop(), &config.LibPodConfig)
 	assert.Nil(t, err)
 
 	cli := newContainerScraper(client, zap.NewNop(), config)
@@ -97,7 +117,7 @@ func TestWatchingTimeouts(t *testing.T) {
 	err = cli.loadContainerList(context.Background())
 	require.Error(t, err)
 
-	container, err := cli.fetchContainerStats(context.Background(), container{})
+	container, err := cli.fetchContainerStats(context.Background(), podman.Container{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), expectedError)
 	assert.Empty(t, container)
@@ -128,11 +148,13 @@ func TestEventLoopHandlesError(t *testing.T) {
 
 	observed, logs := observer.New(zapcore.WarnLevel)
 	config := &Config{
-		Endpoint: fmt.Sprintf("unix://%s", addr),
-		Timeout:  50 * time.Millisecond,
+		LibPodConfig: podman.LibPodConfig{
+			Endpoint: fmt.Sprintf("unix://%s", addr),
+			Timeout:  50 * time.Millisecond,
+		},
 	}
 
-	client, err := newLibpodClient(zap.NewNop(), config)
+	client, err := podman.NewLibpodClient(zap.NewNop(), &config.LibPodConfig)
 	assert.Nil(t, err)
 
 	cli := newContainerScraper(client, zap.New(observed), config)
@@ -162,15 +184,15 @@ func TestEventLoopHandlesError(t *testing.T) {
 }
 
 func TestEventLoopHandles(t *testing.T) {
-	eventChan := make(chan event)
+	eventChan := make(chan podman.Event)
 	errChan := make(chan error)
 
 	eventClient := baseClient
-	eventClient.EventsF = func(context.Context, url.Values) (<-chan event, <-chan error) {
+	eventClient.EventsF = func(context.Context, url.Values) (<-chan podman.Event, <-chan error) {
 		return eventChan, errChan
 	}
-	eventClient.ListF = func(context.Context, url.Values) ([]container, error) {
-		return []container{{
+	eventClient.ListF = func(context.Context, url.Values) ([]podman.Container, error) {
+		return []podman.Container{{
 			ID: "c1",
 		}}, nil
 	}
@@ -181,7 +203,7 @@ func TestEventLoopHandles(t *testing.T) {
 	assert.Equal(t, 0, len(cli.containers))
 
 	go cli.containerEventLoop(context.Background())
-	eventChan <- event{ID: "c1", Status: "start"}
+	eventChan <- podman.Event{ID: "c1", Status: "start"}
 
 	assert.Eventually(t, func() bool {
 		cli.containersLock.Lock()
@@ -189,7 +211,7 @@ func TestEventLoopHandles(t *testing.T) {
 		return assert.Equal(t, 1, len(cli.containers))
 	}, 1*time.Second, 1*time.Millisecond, "failed to update containers list.")
 
-	eventChan <- event{ID: "c1", Status: "died"}
+	eventChan <- podman.Event{ID: "c1", Status: "died"}
 
 	assert.Eventually(t, func() bool {
 		cli.containersLock.Lock()
@@ -200,8 +222,8 @@ func TestEventLoopHandles(t *testing.T) {
 
 func TestInspectAndPersistContainer(t *testing.T) {
 	inspectClient := baseClient
-	inspectClient.ListF = func(context.Context, url.Values) ([]container, error) {
-		return []container{{
+	inspectClient.ListF = func(context.Context, url.Values) ([]podman.Container, error) {
+		return []podman.Container{{
 			ID: "c1",
 		}}, nil
 	}

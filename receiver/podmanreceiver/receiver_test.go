@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -37,9 +38,11 @@ import (
 
 func TestNewReceiver(t *testing.T) {
 	config := &Config{
-		Endpoint: "unix:///run/some.sock",
 		ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 			CollectionInterval: 1 * time.Second,
+		},
+		LibPodConfig: podman.LibPodConfig{
+			Endpoint: "unix:///run/some.sock",
 		},
 	}
 	nextConsumer := consumertest.NewNop()
@@ -55,7 +58,7 @@ func TestNewReceiverErrors(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "config.Endpoint must be specified", err.Error())
 
-	r, err = newReceiver(context.Background(), receivertest.NewNopCreateSettings(), &Config{Endpoint: "someEndpoint"}, consumertest.NewNop(), nil)
+	r, err = newReceiver(context.Background(), receivertest.NewNopCreateSettings(), &Config{LibPodConfig: podman.LibPodConfig{Endpoint: "someEndpoint"}}, consumertest.NewNop(), nil)
 	assert.Nil(t, r)
 	require.Error(t, err)
 	assert.Equal(t, "config.CollectionInterval must be specified", err.Error())
@@ -73,11 +76,11 @@ func TestScraperLoop(t *testing.T) {
 	assert.NotNil(t, r)
 
 	go func() {
-		client <- containerStatsReport{
-			Stats: []containerStats{{
+		client <- podman.ContainerStatsReport{
+			Stats: []podman.ContainerStats{{
 				ContainerID: "c1",
 			}},
-			Error: containerStatsReportError{},
+			Error: podman.ContainerStatsReportError{},
 		}
 	}()
 
@@ -89,13 +92,13 @@ func TestScraperLoop(t *testing.T) {
 	assert.NoError(t, r.Shutdown(context.Background()))
 }
 
-type mockClient chan containerStatsReport
+type mockClient chan podman.ContainerStatsReport
 
-func (c mockClient) factory(logger *zap.Logger, cfg *Config) (PodmanClient, error) {
+func (c mockClient) factory(logger *zap.Logger, cfg *podman.LibPodConfig) (podman.Client, error) {
 	return c, nil
 }
 
-func (c mockClient) stats(context.Context, url.Values) ([]containerStats, error) {
+func (c mockClient) Stats(context.Context, url.Values) ([]podman.ContainerStats, error) {
 	report := <-c
 	if report.Error.Message != "" {
 		return nil, errors.New(report.Error.Message)
@@ -103,17 +106,17 @@ func (c mockClient) stats(context.Context, url.Values) ([]containerStats, error)
 	return report.Stats, nil
 }
 
-func (c mockClient) ping(context.Context) error {
+func (c mockClient) Ping(context.Context) error {
 	return nil
 }
 
 type mockConsumer chan pmetric.Metrics
 
-func (c mockClient) list(context.Context, url.Values) ([]container, error) {
-	return []container{{ID: "c1"}}, nil
+func (c mockClient) List(context.Context, url.Values) ([]podman.Container, error) {
+	return []podman.Container{{ID: "c1"}}, nil
 }
 
-func (c mockClient) events(context.Context, url.Values) (<-chan event, <-chan error) {
+func (c mockClient) Events(context.Context, url.Values) (<-chan podman.Event, <-chan error) {
 	return nil, nil
 }
 

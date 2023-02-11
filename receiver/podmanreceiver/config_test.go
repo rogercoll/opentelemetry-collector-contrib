@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/podman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
@@ -43,9 +44,11 @@ func TestLoadConfig(t *testing.T) {
 				ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 					CollectionInterval: 10 * time.Second,
 				},
-				APIVersion: defaultAPIVersion,
-				Endpoint:   "unix:///run/podman/podman.sock",
-				Timeout:    5 * time.Second,
+				LibPodConfig: podman.LibPodConfig{
+					APIVersion: defaultAPIVersion,
+					Endpoint:   "unix:///run/podman/podman.sock",
+					Timeout:    5 * time.Second,
+				},
 			},
 		},
 		{
@@ -54,9 +57,11 @@ func TestLoadConfig(t *testing.T) {
 				ScraperControllerSettings: scraperhelper.ScraperControllerSettings{
 					CollectionInterval: 2 * time.Second,
 				},
-				APIVersion: defaultAPIVersion,
-				Endpoint:   "http://example.com/",
-				Timeout:    20 * time.Second,
+				LibPodConfig: podman.LibPodConfig{
+					APIVersion: defaultAPIVersion,
+					Endpoint:   "unix:///run/podman/podman.sock",
+					Timeout:    8 * time.Second,
+				},
 			},
 		},
 	}

@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-type Config struct {
+type LibPodConfig struct {
 	// The URL of the podman server.  Default is "unix:///run/podman/podman.sock"
 	Endpoint string `mapstructure:"endpoint"`
 
@@ -31,7 +31,7 @@ type Config struct {
 	SSHPassphrase string `mapstructure:"ssh_passphrase"`
 }
 
-func (config Config) Validate() error {
+func (config LibPodConfig) Validate() error {
 	if config.Endpoint == "" {
 		return errors.New("config.Endpoint must be specified")
 	}
