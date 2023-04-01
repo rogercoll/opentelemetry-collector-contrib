@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/containers/podman/v4/libpod/define"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -38,7 +39,7 @@ import (
 
 type MockClient struct {
 	PingF   func(context.Context) error
-	StatsF  func(context.Context, url.Values) ([]containerStats, error)
+	StatsF  func(context.Context, url.Values) ([]define.ContainerStats, error)
 	ListF   func(context.Context, url.Values) ([]container, error)
 	EventsF func(context.Context, url.Values) (<-chan event, <-chan error)
 }
@@ -47,7 +48,7 @@ func (c *MockClient) ping(ctx context.Context) error {
 	return c.PingF(ctx)
 }
 
-func (c *MockClient) stats(ctx context.Context, options url.Values) ([]containerStats, error) {
+func (c *MockClient) stats(ctx context.Context, options url.Values) ([]define.ContainerStats, error) {
 	return c.StatsF(ctx, options)
 }
 
@@ -63,7 +64,7 @@ var baseClient = MockClient{
 	PingF: func(context.Context) error {
 		return nil
 	},
-	StatsF: func(context.Context, url.Values) ([]containerStats, error) {
+	StatsF: func(context.Context, url.Values) ([]define.ContainerStats, error) {
 		return nil, nil
 	},
 	ListF: func(context.Context, url.Values) ([]container, error) {

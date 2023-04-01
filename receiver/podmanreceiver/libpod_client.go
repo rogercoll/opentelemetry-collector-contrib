@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/containers/podman/v4/libpod/define"
 	"go.uber.org/zap"
 )
 
@@ -62,7 +63,7 @@ func (c *libpodClient) request(ctx context.Context, path string, params url.Valu
 	return c.conn.Do(req)
 }
 
-func (c *libpodClient) stats(ctx context.Context, options url.Values) ([]containerStats, error) {
+func (c *libpodClient) stats(ctx context.Context, options url.Values) ([]define.ContainerStats, error) {
 	resp, err := c.request(ctx, "/containers/stats", options)
 	if err != nil {
 		return nil, err

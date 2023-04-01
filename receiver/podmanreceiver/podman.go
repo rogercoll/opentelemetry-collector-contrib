@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/containers/podman/v4/libpod/define"
+
 	"go.uber.org/zap"
 )
 
@@ -31,7 +33,7 @@ type clientFactory func(logger *zap.Logger, cfg *Config) (PodmanClient, error)
 
 type PodmanClient interface {
 	ping(context.Context) error
-	stats(context.Context, url.Values) ([]containerStats, error)
+	stats(context.Context, url.Values) ([]define.ContainerStats, error)
 	list(context.Context, url.Values) ([]container, error)
 	events(context.Context, url.Values) (<-chan event, <-chan error)
 }
@@ -178,7 +180,7 @@ func (pc *ContainerScraper) inspectAndPersistContainer(ctx context.Context, cid 
 }
 
 // fetchContainerStats will query the desired container stats
-func (pc *ContainerScraper) fetchContainerStats(ctx context.Context, c container) (containerStats, error) {
+func (pc *ContainerScraper) fetchContainerStats(ctx context.Context, c container) (define.ContainerStats, error) {
 	params := url.Values{}
 	params.Add("stream", "false")
 	params.Add("containers", c.ID)
@@ -187,7 +189,7 @@ func (pc *ContainerScraper) fetchContainerStats(ctx context.Context, c container
 	defer cancel()
 	stats, err := pc.client.stats(statsCtx, params)
 	if err != nil || len(stats) < 1 {
-		return containerStats{}, err
+		return define.ContainerStats{}, err
 	}
 	return stats[0], nil
 }

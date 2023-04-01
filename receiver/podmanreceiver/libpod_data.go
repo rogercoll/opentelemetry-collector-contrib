@@ -17,7 +17,9 @@
 
 package podmanreceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
 
-import "time"
+import (
+	"github.com/containers/podman/v4/libpod/define"
+)
 
 type container struct {
 	AutoRemove bool
@@ -51,28 +53,6 @@ type event struct {
 	Status string
 }
 
-type containerStats struct {
-	AvgCPU        float64
-	ContainerID   string
-	Name          string
-	PerCPU        []uint64
-	CPU           float64
-	CPUNano       uint64
-	CPUSystemNano uint64
-	DataPoints    int64
-	SystemNano    uint64
-	MemUsage      uint64
-	MemLimit      uint64
-	MemPerc       float64
-	NetInput      uint64
-	NetOutput     uint64
-	BlockInput    uint64
-	BlockOutput   uint64
-	PIDs          uint64
-	UpTime        time.Duration
-	Duration      uint64
-}
-
 type containerStatsReportError struct {
 	Cause    string
 	Message  string
@@ -81,5 +61,5 @@ type containerStatsReportError struct {
 
 type containerStatsReport struct {
 	Error containerStatsReportError
-	Stats []containerStats
+	Stats []define.ContainerStats
 }

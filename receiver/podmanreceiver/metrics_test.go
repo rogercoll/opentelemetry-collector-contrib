@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/containers/podman/v4/libpod/define"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -33,7 +34,7 @@ func TestTranslateStatsToMetrics(t *testing.T) {
 	assertStatsEqualToMetrics(t, stats, md)
 }
 
-func assertStatsEqualToMetrics(t *testing.T, podmanStats *containerStats, md pmetric.Metrics) {
+func assertStatsEqualToMetrics(t *testing.T, podmanStats *define.ContainerStats, md pmetric.Metrics) {
 	assert.Equal(t, md.ResourceMetrics().Len(), 1)
 	rsm := md.ResourceMetrics().At(0)
 
@@ -118,8 +119,8 @@ func assertPoints(t *testing.T, dpts pmetric.NumberDataPointSlice, pts []point) 
 	}
 }
 
-func genContainerStats() *containerStats {
-	return &containerStats{
+func genContainerStats() *define.ContainerStats {
+	return &define.ContainerStats{
 		ContainerID:   "abcd1234",
 		Name:          "cntrA",
 		PerCPU:        []uint64{40, 50, 20, 15},

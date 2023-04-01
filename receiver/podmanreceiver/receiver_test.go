@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/containers/podman/v4/libpod/define"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -74,7 +75,7 @@ func TestScraperLoop(t *testing.T) {
 
 	go func() {
 		client <- containerStatsReport{
-			Stats: []containerStats{{
+			Stats: []define.ContainerStats{{
 				ContainerID: "c1",
 			}},
 			Error: containerStatsReportError{},
@@ -95,7 +96,7 @@ func (c mockClient) factory(logger *zap.Logger, cfg *Config) (PodmanClient, erro
 	return c, nil
 }
 
-func (c mockClient) stats(context.Context, url.Values) ([]containerStats, error) {
+func (c mockClient) stats(context.Context, url.Values) ([]define.ContainerStats, error) {
 	report := <-c
 	if report.Error.Message != "" {
 		return nil, errors.New(report.Error.Message)

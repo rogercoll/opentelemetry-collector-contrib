@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/containers/podman/v4/libpod/define"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -81,7 +82,7 @@ func TestStats(t *testing.T) {
 	assert.NotNil(t, cli)
 	assert.Nil(t, err)
 
-	expectedStats := containerStats{
+	expectedStats := define.ContainerStats{
 		AvgCPU:        42.04781177856639,
 		ContainerID:   "e6af5805edae6c950003abd5451808b277b67077e400f0a6f69d01af116ef014",
 		Name:          "charming_sutherland",
