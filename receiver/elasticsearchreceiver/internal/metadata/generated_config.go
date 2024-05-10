@@ -119,6 +119,7 @@ type MetricsConfig struct {
 	JvmMemoryPoolMax                                          MetricConfig `mapstructure:"jvm.memory.pool.max"`
 	JvmMemoryPoolUsed                                         MetricConfig `mapstructure:"jvm.memory.pool.used"`
 	JvmThreadsCount                                           MetricConfig `mapstructure:"jvm.threads.count"`
+	JvmUptime                                                 MetricConfig `mapstructure:"jvm.uptime"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
@@ -394,6 +395,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		JvmThreadsCount: MetricConfig{
+			Enabled: true,
+		},
+		JvmUptime: MetricConfig{
 			Enabled: true,
 		},
 	}

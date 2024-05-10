@@ -117,6 +117,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					JvmMemoryPoolMax:                                          MetricConfig{Enabled: true},
 					JvmMemoryPoolUsed:                                         MetricConfig{Enabled: true},
 					JvmThreadsCount:                                           MetricConfig{Enabled: true},
+					JvmUptime:                                                 MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					ElasticsearchClusterName: ResourceAttributeConfig{Enabled: true},
@@ -221,6 +222,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					JvmMemoryPoolMax:                                          MetricConfig{Enabled: false},
 					JvmMemoryPoolUsed:                                         MetricConfig{Enabled: false},
 					JvmThreadsCount:                                           MetricConfig{Enabled: false},
+					JvmUptime:                                                 MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					ElasticsearchClusterName: ResourceAttributeConfig{Enabled: false},

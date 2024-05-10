@@ -2107,6 +2107,14 @@ resourceMetrics:
                   timeUnixNano: "1663084098275677000"
             name: jvm.threads.count
             unit: "1"
+          - description: Time elapsed since JVM start time
+            gauge:
+              dataPoints:
+                - asInt: "101643"
+                  startTimeUnixNano: "1715333973885096732"
+                  timeUnixNano: "1715334033235110286"
+            name: jvm.uptime
+            unit: ms
         scope:
           name: otelcol/elasticsearchreceiver
           version: latest

@@ -769,6 +769,14 @@ The current number of threads
 | ---- | ----------- | ---------- |
 | 1 | Gauge | Int |
 
+### jvm.uptime
+
+Time elapsed since JVM start time
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| ms | Gauge | Int |
+
 ## Optional Metrics
 
 The following metrics are not emitted by default. Each of them can be enabled by applying the following configuration:

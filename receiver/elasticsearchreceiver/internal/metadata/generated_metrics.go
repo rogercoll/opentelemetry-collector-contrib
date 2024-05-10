@@ -5244,6 +5244,55 @@ func newMetricJvmThreadsCount(cfg MetricConfig) metricJvmThreadsCount {
 	return m
 }
 
+type metricJvmUptime struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills jvm.uptime metric with initial data.
+func (m *metricJvmUptime) init() {
+	m.data.SetName("jvm.uptime")
+	m.data.SetDescription("Time elapsed since JVM start time")
+	m.data.SetUnit("ms")
+	m.data.SetEmptyGauge()
+}
+
+func (m *metricJvmUptime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricJvmUptime) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricJvmUptime) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricJvmUptime(cfg MetricConfig) metricJvmUptime {
+	m := metricJvmUptime{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
@@ -5345,6 +5394,7 @@ type MetricsBuilder struct {
 	metricJvmMemoryPoolMax                                          metricJvmMemoryPoolMax
 	metricJvmMemoryPoolUsed                                         metricJvmMemoryPoolUsed
 	metricJvmThreadsCount                                           metricJvmThreadsCount
+	metricJvmUptime                                                 metricJvmUptime
 }
 
 // metricBuilderOption applies changes to default metrics builder.
@@ -5454,6 +5504,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSetting
 		metricJvmMemoryPoolMax:                                          newMetricJvmMemoryPoolMax(mbc.Metrics.JvmMemoryPoolMax),
 		metricJvmMemoryPoolUsed:                                         newMetricJvmMemoryPoolUsed(mbc.Metrics.JvmMemoryPoolUsed),
 		metricJvmThreadsCount:                                           newMetricJvmThreadsCount(mbc.Metrics.JvmThreadsCount),
+		metricJvmUptime:                                                 newMetricJvmUptime(mbc.Metrics.JvmUptime),
 		resourceAttributeIncludeFilter:                                  make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter:                                  make(map[string]filter.Filter),
 	}
@@ -5633,6 +5684,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	mb.metricJvmMemoryPoolMax.emit(ils.Metrics())
 	mb.metricJvmMemoryPoolUsed.emit(ils.Metrics())
 	mb.metricJvmThreadsCount.emit(ils.Metrics())
+	mb.metricJvmUptime.emit(ils.Metrics())
 
 	for _, op := range rmo {
 		op(rm)
@@ -6117,6 +6169,11 @@ func (mb *MetricsBuilder) RecordJvmMemoryPoolUsedDataPoint(ts pcommon.Timestamp,
 // RecordJvmThreadsCountDataPoint adds a data point to jvm.threads.count metric.
 func (mb *MetricsBuilder) RecordJvmThreadsCountDataPoint(ts pcommon.Timestamp, val int64) {
 	mb.metricJvmThreadsCount.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordJvmUptimeDataPoint adds a data point to jvm.uptime metric.
+func (mb *MetricsBuilder) RecordJvmUptimeDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricJvmUptime.recordDataPoint(mb.startTime, ts, val)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

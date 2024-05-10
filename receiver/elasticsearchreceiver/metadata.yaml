@@ -489,6 +489,12 @@ metrics:
       value_type: int
     attributes: []
     enabled: true
+  jvm.uptime:
+    enabled: true
+    description: Time elapsed since JVM start time
+    unit: ms
+    gauge:
+      value_type: int
   jvm.gc.collections.count:
     description: The total number of garbage collections that have occurred
     unit: 1

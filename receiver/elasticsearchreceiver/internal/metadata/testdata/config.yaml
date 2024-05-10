@@ -183,6 +183,8 @@ all_set:
       enabled: true
     jvm.threads.count:
       enabled: true
+    jvm.uptime:
+      enabled: true
   resource_attributes:
     elasticsearch.cluster.name:
       enabled: true
@@ -375,6 +377,8 @@ none_set:
     jvm.memory.pool.used:
       enabled: false
     jvm.threads.count:
+      enabled: false
+    jvm.uptime:
       enabled: false
   resource_attributes:
     elasticsearch.cluster.name:
