@@ -77,3 +77,5 @@ require (
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240701130421-f6361c86f094
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent => ../../internal/sharedcomponent
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

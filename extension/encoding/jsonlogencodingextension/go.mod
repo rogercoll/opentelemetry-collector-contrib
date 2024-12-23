@@ -50,3 +50,5 @@ require (
 )
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding => ../
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

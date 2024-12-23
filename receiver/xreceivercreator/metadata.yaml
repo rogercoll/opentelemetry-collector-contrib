@@ -1,0 +1,8 @@
+type: xcreator
+
+status:
+  class: receiver
+  stability:
+    beta: [traces, metrics, logs]
+  distributions: [core, contrib]
+

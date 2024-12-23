@@ -100,3 +100,5 @@ retract (
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/common => ../../../../internal/common
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen => ../..
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

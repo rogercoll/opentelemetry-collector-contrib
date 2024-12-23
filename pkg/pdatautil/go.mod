@@ -28,3 +28,5 @@ retract (
 	v0.76.2
 	v0.76.1
 )
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

@@ -104,3 +104,5 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/otela
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent => ../sharedcomponent
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/grpcutil => ../grpcutil
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

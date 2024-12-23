@@ -131,3 +131,5 @@ retract (
 replace github.com/go-openapi/spec v0.20.5 => github.com/go-openapi/spec v0.20.6
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden => ../../pkg/golden
+
+replace go.opentelemetry.io/collector => /home/neck/Documents/github/rogercoll/opentelemetry-collector

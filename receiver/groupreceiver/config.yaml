@@ -1,0 +1,65 @@
+extensions:
+  healthcheckv2:
+    use_v2: true
+    component_health:
+      include_permanent_errors: false
+      include_recoverable_errors: true
+      recovery_duration: 5m
+    http:
+      endpoint: "localhost:13133"
+      status:
+        enabled: true
+        path: "/health/status"
+      config:
+        enabled: true
+        path: "/health/config"
+
+receivers:
+  group:
+    hostmetrics:
+      collection_interval: 5s
+      scrapers:
+        cpu:
+    docker_stats:
+
+processors:
+  resource/manual:
+    attributes:
+      - key: manual_insert
+        value: true
+        action: insert
+  remotetap:
+
+exporters:
+  debug:
+    verbosity: normal
+
+service:
+  extensions:
+    - healthcheckv2
+    # - opamp
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 8888
+    logs:
+      level:
+      # processors:
+      #   - batch:
+      #       exporter:
+      #         otlp:
+      #           protocol: http/protobuf
+      #           endpoint: http://localhost:4325
+  pipelines:
+    metrics:
+      receivers:
+        - group
+      processors:
+        - resource/manual
+        - remotetap
+      exporters:
+        - debug
