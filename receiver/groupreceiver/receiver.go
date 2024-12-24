@@ -71,6 +71,9 @@ func (x *xcreator) Start(ctx context.Context, h component.Host) error {
 
 	for compID, compConf := range x.cfg.cfg {
 		factory := rcHost.GetFactory(component.KindReceiver, compID.Type())
+		if factory == nil {
+			return fmt.Errorf("unable to lookup factory for receiver %s:%q", compID.Type().String(), compID.String())
+		}
 		conf := factory.CreateDefaultConfig()
 		templatedConfig := confmap.NewFromStringMap(compConf)
 		err := templatedConfig.Unmarshal(conf)
@@ -78,7 +81,7 @@ func (x *xcreator) Start(ctx context.Context, h component.Host) error {
 			x.logger.Error(fmt.Sprintf("merge conf", err.Error()))
 			return err
 		}
-		x.logger.Warn(fmt.Sprintf("Group receiver, adding component: %#v", compID.String()))
+		x.logger.Warn(fmt.Sprintf("Group receiver, adding component: %#v, with config: %#v", compID.String(), compConf))
 		err = rcHost.AddComponent(pipeline.NewID(x.signal), component.KindReceiver, compID, conf)
 		if err != nil {
 			x.logger.Error(fmt.Sprintf("Xcreator error on adding receiver: %s", err.Error()))
