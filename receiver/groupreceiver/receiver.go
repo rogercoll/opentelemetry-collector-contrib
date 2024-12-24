@@ -9,10 +9,12 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componentstatus"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pipeline"
 	"go.opentelemetry.io/collector/receiver"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -57,8 +59,9 @@ func newXCreator(settings receiver.Settings, cfg component.Config, signal pipeli
 type host interface {
 	component.Host
 	AddComponent(pipelineID pipeline.ID, kind component.Kind, compID component.ID, conf component.Config) error
-	RemoveComponent(kind component.Kind, compID component.ID) error
+	RemoveComponent(pipelineID pipeline.ID, kind component.Kind, compID component.ID) error
 	GetFactory(component.Kind, component.Type) component.Factory
+	InstanceID() *componentstatus.InstanceID
 }
 
 // TODO: It always create an otlp receiver, it should switch to a template
@@ -69,29 +72,38 @@ func (x *xcreator) Start(ctx context.Context, h component.Host) error {
 		return errors.New("the receivercreator is not compatible with the provided component.host")
 	}
 
-	for compID, compConf := range x.cfg.cfg {
-		factory := rcHost.GetFactory(component.KindReceiver, compID.Type())
-		if factory == nil {
-			return fmt.Errorf("unable to lookup factory for receiver %s:%q", compID.Type().String(), compID.String())
+	x.h = rcHost
+	x.logger.Warn(fmt.Sprintf("Group receiver pipelines: %#v", x.h.InstanceID()))
+
+	var merr error
+	startAllPipelines := func(pipelineID pipeline.ID) bool {
+		for compID, compConf := range x.cfg.cfg {
+			factory := rcHost.GetFactory(component.KindReceiver, compID.Type())
+			if factory == nil {
+				merr = multierr.Append(merr, fmt.Errorf("unable to lookup factory for receiver %s:%q", compID.Type().String(), compID.String()))
+				continue
+			}
+			conf := factory.CreateDefaultConfig()
+			templatedConfig := confmap.NewFromStringMap(compConf)
+			err := templatedConfig.Unmarshal(conf)
+			if err != nil {
+				x.logger.Error(fmt.Sprintf("merge conf", err.Error()))
+				merr = multierr.Append(merr, err)
+				continue
+			}
+			x.logger.Warn(fmt.Sprintf("Group receiver, adding component: %#v, with config: %#v", compID.String(), compConf))
+			err = rcHost.AddComponent(pipelineID, component.KindReceiver, compID, conf)
+			if err != nil {
+				merr = multierr.Append(merr, err)
+				continue
+			}
 		}
-		conf := factory.CreateDefaultConfig()
-		templatedConfig := confmap.NewFromStringMap(compConf)
-		err := templatedConfig.Unmarshal(conf)
-		if err != nil {
-			x.logger.Error(fmt.Sprintf("merge conf", err.Error()))
-			return err
-		}
-		x.logger.Warn(fmt.Sprintf("Group receiver, adding component: %#v, with config: %#v", compID.String(), compConf))
-		err = rcHost.AddComponent(pipeline.NewID(x.signal), component.KindReceiver, compID, conf)
-		if err != nil {
-			x.logger.Error(fmt.Sprintf("Xcreator error on adding receiver: %s", err.Error()))
-			return err
-		}
+		return true
 	}
 
-	x.logger.Info(fmt.Sprintf("Group no error on adding receiver"))
+	x.h.InstanceID().AllPipelineIDs(startAllPipelines)
 
-	return nil
+	return merr
 }
 
 func (x *xcreator) Shutdown(context.Context) error {
@@ -100,14 +112,22 @@ func (x *xcreator) Shutdown(context.Context) error {
 		return errors.New("the receivercreator is not compatible with the provided component.host")
 	}
 
-	for compID := range x.cfg.cfg {
-		x.logger.Info("Group stopping receiver: %s", zap.String("recvID", compID.String()))
-		err := rcHost.RemoveComponent(component.KindReceiver, compID)
-		if err != nil {
-			x.logger.Error(fmt.Sprintf("Xcreator error on removing receiver: %s", err.Error()))
+	var merr error
+	stopAllPipelines := func(pipelineID pipeline.ID) bool {
+		for compID := range x.cfg.cfg {
+			x.logger.Info("Group stopping receiver", zap.String("recvID", compID.String()))
+			err := rcHost.RemoveComponent(pipelineID, component.KindReceiver, compID)
+			if err != nil {
+				x.logger.Error(fmt.Sprintf("Xcreator error on removing receiver: %s", err.Error()))
+				merr = multierr.Append(merr, err)
+				continue
+			}
 		}
+		return true
 	}
-	return nil
+
+	x.h.InstanceID().AllPipelineIDs(stopAllPipelines)
+	return merr
 }
 
 type xcreator struct {

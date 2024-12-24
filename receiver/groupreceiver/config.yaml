@@ -16,11 +16,12 @@ extensions:
 
 receivers:
   group:
-    hostmetrics:
-      collection_interval: 5s
-      scrapers:
-        cpu:
-    docker_stats:
+    configs:
+      hostmetrics:
+        collection_interval: 5s
+        scrapers:
+          cpu:
+      docker_stats:
 
 processors:
   resource/manual:
