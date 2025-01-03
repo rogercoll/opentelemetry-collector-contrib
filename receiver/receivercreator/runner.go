@@ -80,7 +80,7 @@ func (run *receiverRunner) start(
 
 // shutdown the given receiver.
 func (run *receiverRunner) shutdown(rcvrID component.ID) error {
-	return run.host.RemoveComponent(component.KindReceiver, rcvrID)
+	return run.host.RemoveComponent(pipeline.NewID(pipeline.SignalMetrics), component.KindReceiver, rcvrID)
 }
 
 // loadRuntimeReceiverConfig loads the given receiverTemplate merged with config values
