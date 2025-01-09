@@ -64,8 +64,6 @@ type host interface {
 	InstanceID() *componentstatus.InstanceID
 }
 
-// TODO: It always create an otlp receiver, it should switch to a template
-// provider instead
 func (x *xcreator) Start(ctx context.Context, h component.Host) error {
 	rcHost, ok := h.(host)
 	if !ok {
@@ -112,14 +110,13 @@ func (x *xcreator) Shutdown(context.Context) error {
 		return errors.New("the receivercreator is not compatible with the provided component.host")
 	}
 
-	var merr error
+	// var merr error
 	stopAllPipelines := func(pipelineID pipeline.ID) bool {
 		for compID := range x.cfg.cfg {
 			x.logger.Info("Group stopping receiver", zap.String("recvID", compID.String()))
 			err := rcHost.RemoveComponent(pipelineID, component.KindReceiver, compID)
 			if err != nil {
-				x.logger.Error(fmt.Sprintf("Xcreator error on removing receiver: %s", err.Error()))
-				merr = multierr.Append(merr, err)
+				x.logger.Info(fmt.Sprintf("Xcreator error on removing receiver: %s", err.Error()))
 				continue
 			}
 		}
@@ -127,7 +124,7 @@ func (x *xcreator) Shutdown(context.Context) error {
 	}
 
 	x.h.InstanceID().AllPipelineIDs(stopAllPipelines)
-	return merr
+	return nil
 }
 
 type xcreator struct {
