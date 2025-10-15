@@ -1,0 +1,15 @@
+type: xfilterprocessor
+scope_name: github.com/open-telemetry/opentelemetry-collector-contrib/processor/xfilterprocessor
+
+status:
+  class: processor
+  stability:
+    development: [profiles]
+  distributions: []
+  warnings: [Statefulness]
+  codeowners:
+    active: []
+tests:
+  config:
+
+
