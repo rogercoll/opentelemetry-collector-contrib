@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata_legacy"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/ucal"
 )
 
@@ -27,10 +28,11 @@ const (
 
 // cpuScraper for CPU Metrics
 type cpuScraper struct {
-	settings scraper.Settings
-	config   *Config
-	mb       *metadata.MetricsBuilder
-	ucal     *ucal.CPUUtilizationCalculator
+	settings  scraper.Settings
+	config    *Config
+	mb        *metadata.MetricsBuilder
+	mb_legacy *metadata_legacy.MetricsBuilder
+	ucal      *ucal.CPUUtilizationCalculator
 
 	// for mocking
 	bootTime func(context.Context) (uint64, error)
@@ -53,7 +55,8 @@ func (s *cpuScraper) start(ctx context.Context, _ component.Host) error {
 	if err != nil {
 		return err
 	}
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = metadata.NewMetricsBuilder(s.config.v1, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb_legacy = metadata_legacy.NewMetricsBuilder(s.config.legacy, s.settings, metadata_legacy.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 
@@ -73,7 +76,7 @@ func (s *cpuScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 		return pmetric.NewMetrics(), scrapererror.NewPartialScrapeError(err, metricsLen)
 	}
 
-	if s.config.Metrics.SystemCPUPhysicalCount.Enabled {
+	if s.config.v1.Metrics.SystemCPUPhysicalCount.Enabled {
 		numCPU, err := cpu.Counts(false)
 		if err != nil {
 			return pmetric.NewMetrics(), scrapererror.NewPartialScrapeError(err, metricsLen)
@@ -81,7 +84,7 @@ func (s *cpuScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 		s.mb.RecordSystemCPUPhysicalCountDataPoint(now, int64(numCPU))
 	}
 
-	if s.config.Metrics.SystemCPULogicalCount.Enabled {
+	if s.config.v1.Metrics.SystemCPULogicalCount.Enabled {
 		numCPU, err := cpu.Counts(true)
 		if err != nil {
 			return pmetric.NewMetrics(), scrapererror.NewPartialScrapeError(err, metricsLen)
@@ -89,15 +92,19 @@ func (s *cpuScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 		s.mb.RecordSystemCPULogicalCountDataPoint(now, int64(numCPU))
 	}
 
-	if s.config.Metrics.SystemCPUFrequency.Enabled {
+	if s.config.v1.Metrics.SystemCPUFrequency.Enabled || s.config.legacy.Metrics.SystemCPUFrequency.Enabled {
 		cpuInfos, err := s.getCPUInfo()
 		if err != nil {
 			return pmetric.NewMetrics(), scrapererror.NewPartialScrapeError(err, metricsLen)
 		}
 		for _, cInfo := range cpuInfos {
 			s.mb.RecordSystemCPUFrequencyDataPoint(now, cInfo.frequency*hzInAMHz, fmt.Sprintf("cpu%d", cInfo.processor))
+			s.mb_legacy.RecordSystemCPUFrequencyDataPoint(now, cInfo.frequency*hzInAMHz, fmt.Sprintf("cpu%d", cInfo.processor))
 		}
 	}
 
-	return s.mb.Emit(), nil
+	v1M := s.mb.Emit()
+	s.mb_legacy.Emit().ResourceMetrics().MoveAndAppendTo(v1M.ResourceMetrics())
+
+	return v1M, nil
 }

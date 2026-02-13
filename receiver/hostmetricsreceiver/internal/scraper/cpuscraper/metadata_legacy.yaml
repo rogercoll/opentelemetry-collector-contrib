@@ -1,11 +1,12 @@
 type: cpu
+generated_package_name: metadata_legacy
 
 feature_gates:
-  - id: receiver.hostmetrics.EmitV1SystemConventions
+  - id: receiver.hostmetrics.EmitV0SystemConventions
     stage: alpha
     reference_url: https://example.com
     description: >-
-      When enabled, semconv stable attributes are enabled.
+      When enabled, semconv legacy attributes are disabled.
     from_version: v0.145.0
 
 status:
@@ -19,11 +20,11 @@ status:
 sem_conv_version: 1.9.0
 
 attributes:
-  cpu.logical_number:
+  cpu:
     description: Logical CPU number starting at 0.
     type: string
 
-  cpu.mode:
+  state:
     description: Breakdown of CPU usage by type.
     type: string
     enum: [idle, interrupt, nice, softirq, steal, system, user, wait]
@@ -37,29 +38,7 @@ metrics:
       level: development
     gauge:
       value_type: double
-    attributes: [cpu.logical_number]
-
-  system.cpu.logical.count:
-    enabled: false
-    description: Number of available logical CPUs.
-    unit: "{cpu}"
-    stability:
-      level: development
-    sum:
-      value_type: int
-      monotonic: false
-      aggregation_temporality: cumulative
-
-  system.cpu.physical.count:
-    enabled: false
-    description: Number of available physical CPUs.
-    unit: "{cpu}"
-    stability:
-      level: development
-    sum:
-      value_type: int
-      monotonic: false
-      aggregation_temporality: cumulative
+    attributes: [cpu]
 
   system.cpu.time:
     enabled: true
@@ -71,7 +50,7 @@ metrics:
       value_type: double
       aggregation_temporality: cumulative
       monotonic: true
-    attributes: [cpu.logical_number, cpu.mode]
+    attributes: [cpu, state]
 
   system.cpu.utilization:
     enabled: false
@@ -81,4 +60,4 @@ metrics:
       level: development
     gauge:
       value_type: double
-    attributes: [cpu.logical_number, cpu.mode]
+    attributes: [cpu, state]
