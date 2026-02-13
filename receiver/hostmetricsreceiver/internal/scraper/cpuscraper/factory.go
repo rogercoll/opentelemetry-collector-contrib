@@ -19,9 +19,7 @@ func NewFactory() scraper.Factory {
 
 // createDefaultConfig creates the default configuration for the Scraper.
 func createDefaultConfig() component.Config {
-	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-	}
+	return &Config{}
 }
 
 // createMetricsScraper creates a scraper based on provided config.
