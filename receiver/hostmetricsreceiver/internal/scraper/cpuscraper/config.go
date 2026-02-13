@@ -4,8 +4,6 @@
 package cpuscraper // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper"
 
 import (
-	"fmt"
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata_legacy"
 	"go.opentelemetry.io/collector/confmap"
@@ -27,30 +25,32 @@ func (cfg *DualScheme) Unmarshal(componentParser *confmap.Conf) error {
 		metadata_legacy.ReceiverHostmetricsEmitV0SystemConventionsFeatureGate.IsEnabled() {
 
 		cfg.v1 = metadata.DefaultMetricsBuilderConfig()
+		// WithIgnoreUnused to allow other schemes fields
 		err := componentParser.Unmarshal(&cfg.v1, confmap.WithIgnoreUnused())
 		if err != nil {
 			return err
 		}
 
 		cfg.legacy = metadata_legacy.DefaultMetricsBuilderConfig()
+		// WithIgnoreUnused to allow other schemes fields
 		err = componentParser.Unmarshal(&cfg.legacy, confmap.WithIgnoreUnused())
 		if err != nil {
 			return err
 		}
 	} else if metadata.ReceiverHostmetricsEmitV1SystemConventionsFeatureGate.IsEnabled() {
 		cfg.v1 = metadata.DefaultMetricsBuilderConfig()
+		// Only V1 configuration should be allowed, error otherwise
 		err := componentParser.Unmarshal(&cfg.v1)
 		if err != nil {
 			return err
 		}
 	} else if metadata_legacy.ReceiverHostmetricsEmitV0SystemConventionsFeatureGate.IsEnabled() {
 		cfg.legacy = metadata_legacy.DefaultMetricsBuilderConfig()
+		// Only Legacy configuration should be allowed, error otherwise
 		err := componentParser.Unmarshal(&cfg.legacy)
 		if err != nil {
 			return err
 		}
 	}
-	fmt.Println(cfg.v1)
-	fmt.Println(cfg.legacy)
 	return nil
 }
