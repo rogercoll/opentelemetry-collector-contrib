@@ -486,6 +486,10 @@ func (e *elasticsearchExporter) extractDocumentPipelineAttribute(m pcommon.Map) 
 }
 
 func (e *elasticsearchExporter) pushProfilesData(ctx context.Context, pd pprofile.Profiles) error {
+	if e.config.isDenormalizedProfiles() {
+		return e.pushDenormalizedProfilesData(ctx, pd)
+	}
+
 	// TODO add support for routing profiles to different data_stream.namespaces?
 	defaultMappingMode, err := e.getRequestMappingMode(ctx)
 	if err != nil {
@@ -542,6 +546,61 @@ func (e *elasticsearchExporter) pushProfilesData(ctx context.Context, pd pprofil
 						continue
 					}
 
+					errs = append(errs, err)
+				}
+			}
+		}
+	}
+
+	if err := sessions.Flush(ctx); err != nil {
+		if cerr := ctx.Err(); cerr != nil {
+			return cerr
+		}
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
+}
+
+func (e *elasticsearchExporter) pushDenormalizedProfilesData(ctx context.Context, pd pprofile.Profiles) error {
+	sessions := mappingModeSessions{indexers: &e.bulkIndexers.modes}
+	defer sessions.End()
+
+	dic := pd.Dictionary()
+	ser := e.documentEncoders[int(MappingOTel)].(otelModeEncoder).serializer
+
+	var errs []error
+	for _, rp := range pd.ResourceProfiles().All() {
+		resource := rp.Resource()
+		for _, sp := range rp.ScopeProfiles().All() {
+			scope := sp.Scope()
+			session := sessions.StartSession(ctx, MappingOTel)
+
+			for _, profile := range sp.Profiles().All() {
+				// Encode profile-level metadata (period type, sample type) in the dataset
+				// so it doesn't repeat on every sample document.
+				dataset := otelserializer.ProfileDataset(dic, profile)
+				attrs := pcommon.NewMap()
+				attrs.PutStr("data_stream.dataset", dataset)
+				idx, err := routeRecord(resource, scope, attrs, MappingOTel, defaultDataStreamTypeProfiles)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
+
+				err = ser.SerializeDenormalizedProfile(
+					dic, resource, rp.SchemaUrl(), scope, sp.SchemaUrl(),
+					profile, idx,
+					func(docBuf *bytes.Buffer) error {
+						pooled := e.bufferPool.NewPooledBuffer()
+						pooled.Buffer.Reset()
+						_, _ = pooled.Buffer.ReadFrom(docBuf)
+						return session.Add(ctx, idx.Index, "", "", pooled, nil, docappender.ActionCreate)
+					},
+				)
+				if err != nil {
+					if cerr := ctx.Err(); cerr != nil {
+						return cerr
+					}
 					errs = append(errs, err)
 				}
 			}

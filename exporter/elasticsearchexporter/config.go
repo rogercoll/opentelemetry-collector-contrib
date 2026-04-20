@@ -62,6 +62,12 @@ type Config struct {
 	TracesIndex        string              `mapstructure:"traces_index"`
 	TracesDynamicIndex DynamicIndexSetting `mapstructure:"traces_dynamic_index"`
 
+	// ProfilesMode configures how profiles are indexed into Elasticsearch.
+	// "default" uses the existing multi-index profiling format (profiling-events-*, profiling-stacktraces, etc.).
+	// "denormalized" writes each profile sample as a self-contained document into a
+	// profiles-*.otel-* data stream, with the stack trace fully resolved inline.
+	ProfilesMode string `mapstructure:"profiles_mode"`
+
 	// LogsDynamicID configures whether log record attribute `elasticsearch.document_id` is set as the document ID in ES.
 	LogsDynamicID DynamicIDSettings `mapstructure:"logs_dynamic_id"`
 
@@ -310,6 +316,11 @@ func (m MappingMode) String() string {
 	return ""
 }
 
+const (
+	ProfilesModeDefault      = "default"
+	ProfilesModeDenormalized = "denormalized"
+)
+
 var (
 	errConfigEndpointRequired = errors.New("exactly one of [endpoint, endpoints, cloudid] must be specified")
 	errConfigEmptyEndpoint    = errors.New("endpoint must not be empty")
@@ -361,6 +372,12 @@ func (cfg *Config) Validate() error {
 		return errors.New("compression must be one of [none, gzip]")
 	}
 
+	switch cfg.ProfilesMode {
+	case "", ProfilesModeDefault, ProfilesModeDenormalized:
+	default:
+		return fmt.Errorf("unknown profiles_mode %q, expected one of [%q, %q]", cfg.ProfilesMode, ProfilesModeDefault, ProfilesModeDenormalized)
+	}
+
 	if cfg.Retry.MaxRequests != 0 && cfg.Retry.MaxRetries != 0 {
 		return errors.New("must not specify both retry::max_requests and retry::max_retries")
 	}
@@ -393,6 +410,10 @@ func (cfg *Config) Validate() error {
 	}
 
 	return nil
+}
+
+func (cfg *Config) isDenormalizedProfiles() bool {
+	return cfg.ProfilesMode == ProfilesModeDenormalized
 }
 
 // allowedMappingModes returns a map from canonical mapping mode names to MappingModes.
