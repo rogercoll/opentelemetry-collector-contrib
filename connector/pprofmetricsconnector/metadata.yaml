@@ -1,0 +1,87 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+type: pprofmetrics
+display_name: Pprof Metrics Connector
+description: Converts OTLP profile data into aggregate metrics for pprof-style dashboards (CPU, heap, frame types).
+
+status:
+  class: connector
+  stability:
+    development: [profiles_to_metrics]
+  distributions: [contrib]
+  codeowners:
+    active: [rogercoll]
+
+attributes:
+  frame_type:
+    description: Semantic convention profile.frame.type value for a stack frame.
+    type: string
+  period_type:
+    description: Period type label (e.g. cpu, wall).
+    type: string
+  period_unit:
+    description: Unit for the sampling period.
+    type: string
+  profile_id:
+    description: Unique key for the profile slice (hex profile ID, or a synthetic scope/profile index if unset).
+    type: string
+  sample_origin:
+    description: Combined sample type and unit for grouping (type_unit).
+    type: string
+  sample_type:
+    description: Sample type label from the profile (e.g. cpu, inuse_space, alloc_space).
+    type: string
+  sample_unit:
+    description: Unit for the sample type (e.g. nanoseconds, bytes, count).
+    type: string
+
+metrics:
+  pprof.profile.duration_nanoseconds:
+    enabled: true
+    description: Wall duration of the profile observation window in nanoseconds.
+    stability: development
+    unit: ns
+    gauge:
+      value_type: int
+    attributes: [period_type, period_unit, profile_id, sample_type, sample_unit]
+
+  pprof.profile.frame_type_samples:
+    enabled: true
+    description: Count of stack samples attributed to each profile.frame.type on frames in the stack.
+    stability: development
+    unit: "{sample}"
+    gauge:
+      value_type: int
+    attributes: [frame_type, period_type, period_unit, profile_id, sample_origin, sample_type, sample_unit]
+
+  pprof.profile.period:
+    enabled: true
+    description: Profile sampling period in native units (often nanoseconds for CPU profiles).
+    stability: development
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [period_type, period_unit, profile_id, sample_type, sample_unit]
+
+  pprof.profile.sample_count:
+    enabled: true
+    description: Number of samples in the profile.
+    stability: development
+    unit: "{sample}"
+    gauge:
+      value_type: int
+    attributes: [period_type, period_unit, profile_id, sample_type, sample_unit]
+
+  pprof.profile.sample_value_sum:
+    enabled: true
+    description: Sum of sample Values() across all samples in the profile (e.g. total CPU ns, allocated bytes).
+    stability: development
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [period_type, period_unit, profile_id, sample_type, sample_unit]
+
+tests:
+  config:
+    flush_interval: 0s

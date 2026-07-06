@@ -1,0 +1,25 @@
+default:
+all_set:
+  metrics:
+    pprof.profile.duration_nanoseconds:
+      enabled: true
+    pprof.profile.frame_type_samples:
+      enabled: true
+    pprof.profile.period:
+      enabled: true
+    pprof.profile.sample_count:
+      enabled: true
+    pprof.profile.sample_value_sum:
+      enabled: true
+none_set:
+  metrics:
+    pprof.profile.duration_nanoseconds:
+      enabled: false
+    pprof.profile.frame_type_samples:
+      enabled: false
+    pprof.profile.period:
+      enabled: false
+    pprof.profile.sample_count:
+      enabled: false
+    pprof.profile.sample_value_sum:
+      enabled: false
