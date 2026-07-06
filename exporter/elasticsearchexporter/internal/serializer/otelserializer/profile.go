@@ -21,9 +21,6 @@ const (
 	StackFrameIndex  = "profiling-stackframes"
 	ExecutablesIndex = "profiling-executables"
 
-	ExecutablesSymQueueIndex = "profiling-sq-executables"
-	LeafFramesSymQueueIndex  = "profiling-sq-leafframes"
-
 	HostsMetadataIndex = "profiling-hosts"
 )
 
@@ -118,25 +115,6 @@ func (s *Serializer) SerializeProfile(dic pprofile.ProfilesDictionary, resource 
 		return err
 	}
 
-	err = s.knownUnsymbolizedFrames.WithLock(func(unsymbolizedFramesSet lru.LockedLRUSet) error {
-		for i := range data {
-			payload := &data[i]
-			for _, frame := range payload.UnsymbolizedLeafFrames {
-				if !unsymbolizedFramesSet.CheckAndAdd(frame.DocID) {
-					err = pushDataAsJSON(frame, frame.DocID, LeafFramesSymQueueIndex)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
 	err = s.knownHosts.WithLock(func(hostMetadata lru.LockedLRUSet) error {
 		for i := range data {
 			payload := &data[i]
@@ -158,21 +136,7 @@ func (s *Serializer) SerializeProfile(dic pprofile.ProfilesDictionary, resource 
 		return err
 	}
 
-	return s.knownUnsymbolizedExecutables.WithLock(func(unsymbolizedExecutablesSet lru.LockedLRUSet) error {
-		for i := range data {
-			payload := &data[i]
-			for _, executable := range payload.UnsymbolizedExecutables {
-				if !unsymbolizedExecutablesSet.CheckAndAdd(executable.DocID) {
-					err = pushDataAsJSON(executable, executable.DocID, ExecutablesSymQueueIndex)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		return nil
-	})
+	return nil
 }
 
 func toJSON(d any) (*bytes.Buffer, error) {
@@ -204,18 +168,6 @@ func (s *Serializer) createLRUs() error {
 		s.knownExecutables, err = lru.NewLRUSet(knownExecutablesCacheSize, minILMRolloverTime)
 		if err != nil {
 			s.lruErr = fmt.Errorf("failed to create executables LRU: %w", err)
-			return
-		}
-
-		s.knownUnsymbolizedFrames, err = lru.NewLRUSet(knownUnsymbolizedFramesCacheSize, minILMRolloverTime)
-		if err != nil {
-			s.lruErr = fmt.Errorf("failed to create unsymbolized frames LRU: %w", err)
-			return
-		}
-
-		s.knownUnsymbolizedExecutables, err = lru.NewLRUSet(knownUnsymbolizedExecutablesCacheSize, minILMRolloverTime)
-		if err != nil {
-			s.lruErr = fmt.Errorf("failed to create unsymbolized executables LRU: %w", err)
 			return
 		}
 

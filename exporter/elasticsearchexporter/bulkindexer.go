@@ -401,9 +401,10 @@ func flushBulkIndexer(
 
 		if resp.Error.Type == "version_conflict_engine_exception" {
 			if suppressConflictErrors ||
-				strings.HasPrefix(resp.Index, ".profiling-stackframes-") ||
-				strings.HasPrefix(resp.Index, ".profiling-stacktraces-") {
-				// Rejection of duplicates are either expected (Profiling indices)
+				strings.HasPrefix(resp.Index, ".ds-profiling-stackframes-") ||
+				strings.HasPrefix(resp.Index, ".ds-profiling-stacktraces-") ||
+				strings.HasPrefix(resp.Index, ".ds-profiling-executables-") {
+				// Rejection of duplicates are either expected (Profiling data stream backing indices)
 				// or globally suppressed by the user. Do not log them.
 				continue
 			}
@@ -581,13 +582,13 @@ func (b *bulkIndexers) start(
 	profilingEvents := newBulkIndexer(esClient, cfg, true, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
 	b.profilingEvents = &wgTrackingBulkIndexer{bulkIndexer: profilingEvents, wg: &b.wg}
 
-	profilingStackTraces := newBulkIndexer(esClient, cfg, false, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
+	profilingStackTraces := newBulkIndexer(esClient, cfg, true, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
 	b.profilingStackTraces = &wgTrackingBulkIndexer{bulkIndexer: profilingStackTraces, wg: &b.wg}
 
-	profilingStackFrames := newBulkIndexer(esClient, cfg, false, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
+	profilingStackFrames := newBulkIndexer(esClient, cfg, true, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
 	b.profilingStackFrames = &wgTrackingBulkIndexer{bulkIndexer: profilingStackFrames, wg: &b.wg}
 
-	profilingExecutables := newBulkIndexer(esClient, cfg, false, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
+	profilingExecutables := newBulkIndexer(esClient, cfg, true, b.telemetryBuilder, set.Logger, mappingModeNoneErrorHintFunc)
 	b.profilingExecutables = &wgTrackingBulkIndexer{bulkIndexer: profilingExecutables, wg: &b.wg}
 	return nil
 }

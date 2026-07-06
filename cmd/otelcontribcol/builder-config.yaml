@@ -148,6 +148,8 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.155.0
 
 receivers:
+  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202623
+    import: go.opentelemetry.io/ebpf-profiler/collector
   - gomod: go.opentelemetry.io/collector/receiver/nopreceiver v0.155.1-0.20260625204839-9782f9e8a3d6
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.155.1-0.20260625204839-9782f9e8a3d6
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/activedirectorydsreceiver v0.155.0
@@ -290,3 +292,4 @@ providers:
 # file before passing it to OCB, to ensure that local versions are used for all
 # Contrib modules.
 replaces:
+  - go.opentelemetry.io/ebpf-profiler => /home/neck/Documents/github/rogercoll/opentelemetry-ebpf-profiler
